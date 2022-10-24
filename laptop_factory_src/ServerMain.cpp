@@ -18,16 +18,16 @@ int main(int argc, char *argv[]) {
 	
 	if (argc < 3) {
 		std::cout << "not enough arguments" << std::endl;
-		std::cout << argv[0] << "[port #] [# experts]" << std::endl;
+		std::cout << argv[0] << "[port #] [# admin]" << std::endl;
 		return 0;
 	}
 	port = atoi(argv[1]);
 	num_experts = atoi(argv[2]);
 
 	for (int i = 0; i < num_experts; i++) {
-		std::thread expert_thread(&LaptopFactory::ExpertThread, 
+		std::thread admin_thread(&LaptopFactory::AdminThread,
 				&factory, engineer_cnt++);
-		thread_vector.push_back(std::move(expert_thread));
+		thread_vector.push_back(std::move(admin_thread));
 	}
 
 	if (!socket.Init(port)) {

@@ -1,0 +1,26 @@
+# ninja log v5
+0	342	1666622901414943810	CMakeFiles/server.dir/laptop_factory_src/ServerStub.cpp.o	2c9b957087d0a24c
+0	397	1666622901470066068	CMakeFiles/server.dir/laptop_factory_src/ServerSocket.cpp.o	bd835dbd9258c725
+1	403	1666622901476885124	CMakeFiles/server.dir/laptop_factory_src/Socket.cpp.o	840e6a63cb77827a
+0	414	1666622901488144265	CMakeFiles/server.dir/laptop_factory_src/Messages.cpp.o	c07c54ebf1d272e9
+0	538	1666622901611405256	CMakeFiles/server.dir/laptop_factory_src/ServerMain.cpp.o	163def15d233c284
+0	550	1666622901623344948	CMakeFiles/server.dir/laptop_factory_src/ServerThread.cpp.o	9436fbe4e47a81b2
+550	589	1666622901664390614	server	8354492a4d556ed8
+4	522	1666622985918551529	CMakeFiles/server.dir/laptop_factory_src/ServerMain.cpp.o	163def15d233c284
+522	562	1666622985961696180	server	8354492a4d556ed8
+1	385	1666623063643472161	CMakeFiles/client.dir/laptop_factory_src/ClientSocket.cpp.o	edff13dca12ad52b
+1	387	1666623063643960096	CMakeFiles/client.dir/laptop_factory_src/ClientStub.cpp.o	6f2b24b40fe40cbc
+2	465	1666623063722403807	CMakeFiles/client.dir/laptop_factory_src/Messages.cpp.o	51ca9793b944c76
+1	480	1666623063738693879	CMakeFiles/client.dir/laptop_factory_src/ClientThread.cpp.o	2c686dff02439eb6
+2	489	1666623063747603004	CMakeFiles/client.dir/laptop_factory_src/ClientTimer.cpp.o	80ddeec6a5383191
+0	558	1666623063816702442	CMakeFiles/client.dir/laptop_factory_src/ClientMain.cpp.o	df92145d459a7bf7
+386	643	1666623063902316401	CMakeFiles/client.dir/laptop_factory_src/Socket.cpp.o	470569abf77236be
+643	682	1666623063942686681	client	8957bfff0fd098f9
+1	532	1666623667353279676	CMakeFiles/server.dir/laptop_factory_src/ServerThread.cpp.o	9436fbe4e47a81b2
+532	575	1666623667398608100	server	8354492a4d556ed8
+2	471	1666623914691779564	CMakeFiles/client.dir/laptop_factory_src/ClientThread.cpp.o	2c686dff02439eb6
+472	547	1666623914771224686	client	8957bfff0fd098f9
+2	527	1666623990169501620	CMakeFiles/server.dir/laptop_factory_src/ServerThread.cpp.o	9436fbe4e47a81b2
+527	570	1666623990214865001	server	8354492a4d556ed8
+5	402	1666624361486973999	CMakeFiles/server.dir/laptop_factory_src/ServerSocket.cpp.o	bd835dbd9258c725
+402	446	1666624361533588942	server	8354492a4d556ed8

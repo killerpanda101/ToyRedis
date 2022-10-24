@@ -1,0 +1,4 @@
+/Users/parijatchatterjee/Desktop/ToyRedis/cmake-build-debug/CMakeFiles/client.dir
+/Users/parijatchatterjee/Desktop/ToyRedis/cmake-build-debug/CMakeFiles/server.dir
+/Users/parijatchatterjee/Desktop/ToyRedis/cmake-build-debug/CMakeFiles/edit_cache.dir
+/Users/parijatchatterjee/Desktop/ToyRedis/cmake-build-debug/CMakeFiles/rebuild_cache.dir

@@ -37,7 +37,7 @@ bool ServerSocket::Init(int port) {
 		return false;
 	}
 
-	listen(fd_, 8);
+	listen(fd_, 100);
 
 	is_initialized_ = true;
 	return true;

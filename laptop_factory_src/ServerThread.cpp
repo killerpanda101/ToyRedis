@@ -5,88 +5,123 @@
 #include "ServerStub.h"
 
 LaptopInfo LaptopFactory::
-CreateRegularLaptop(LaptopOrder order, int engineer_id) {
+CreateRegularLaptop(CustomerRequest request, int engineer_id) {
 	LaptopInfo laptop;
-	laptop.CopyOrder(order);
-	laptop.SetEngineerId(engineer_id);
-	laptop.SetExpertId(-1);
-	return laptop;
-}
-
-LaptopInfo LaptopFactory::
-CreateCustomLaptop(LaptopOrder order, int engineer_id) {
-	LaptopInfo laptop;
-	laptop.CopyOrder(order);
+	laptop.CopyRequest(request);
 	laptop.SetEngineerId(engineer_id);
 
-	std::promise<LaptopInfo> prom;
-	std::future<LaptopInfo> fut = prom.get_future();
+    // admin handoff
+    std::promise<int> prom;
+    std::future<int> fut = prom.get_future();
 
-	std::unique_ptr<ExpertRequest> req = 
-		std::unique_ptr<ExpertRequest>(new ExpertRequest);
-	req->laptop = laptop;
-	req->prom = std::move(prom);
+    std::unique_ptr<AdminRequest> req =
+            std::unique_ptr<AdminRequest>(new AdminRequest);
+    MapOp opp = *new MapOp();
+    opp.opcode=1;
+    opp.arg1 = laptop.GetCustomerId();
+    opp.arg2 = laptop.GetOrderNumber();
+    req->operation = opp;
+    req->prom = std::move(prom);
 
-	erq_lock.lock();
-	erq.push(std::move(req));
-	erq_cv.notify_one();
-	erq_lock.unlock();
+    // push to queue
+    erq_lock.lock();
+    erq.push(std::move(req));
+    erq_cv.notify_one();
+    erq_lock.unlock();
 
-	laptop = fut.get();
-	return laptop;
+    // set admin id and return
+    int admin_id = fut.get();
+    laptop.SetAdminId(admin_id);
+
+    return laptop;
 }
+
 
 void LaptopFactory::
 EngineerThread(std::unique_ptr<ServerSocket> socket, int id) {
 	int engineer_id = id;
-	int laptop_type;
-	LaptopOrder order;
+	int request_type;
+	CustomerRequest request;
 	LaptopInfo laptop;
+    CustomerRecord record;
 
 	ServerStub stub;
 
 	stub.Init(std::move(socket));
 
 	while (true) {
-		order = stub.ReceiveOrder();
-		if (!order.IsValid()) {
+		request = stub.ReceiveRequest();
+		if (!request.IsValid()) {
 			break;	
 		}
-		laptop_type = order.GetLaptopType();
-		switch (laptop_type) {
-			case 0:
-				laptop = CreateRegularLaptop(order, engineer_id);
-				break;
+		request_type = request.GetRequestType();
+		switch (request_type) {
 			case 1:
-				laptop = CreateCustomLaptop(order, engineer_id);
+				laptop = CreateRegularLaptop(request, engineer_id);
+                stub.SendLaptop(laptop);
+				break;
+			case 2:
+				record = ReadCustomerRecord(request.GetCustomerId());
+                stub.SendRecord(record);
 				break;
 			default:
-				std::cout << "Undefined laptop type: "
-					<< laptop_type << std::endl;
+				std::cout << "Undefined request type: "
+					<< request_type << std::endl;
 
 		}
-		stub.SendLaptop(laptop);
+
 	}
 }
 
-void LaptopFactory::ExpertThread(int id) {
-	std::unique_lock<std::mutex> ul(erq_lock, std::defer_lock);
+void LaptopFactory::AdminThread(int id) {
+	std::unique_lock<std::mutex> ul_erq(erq_lock, std::defer_lock);
+    std::unique_lock<std::mutex> ul_records(records_lock, std::defer_lock);
+    std::vector<MapOp> smr_log;
 	while (true) {
-		ul.lock();
+        // get operation from queue
+		ul_erq.lock();
 
 		if (erq.empty()) {
-			erq_cv.wait(ul, [this]{ return !erq.empty(); });
+			erq_cv.wait(ul_erq, [this]{ return !erq.empty(); });
 		}
 
 		auto req = std::move(erq.front());
 		erq.pop();
 
-		ul.unlock();
+		ul_erq.unlock();
 
-		std::this_thread::sleep_for(std::chrono::microseconds(100));
-		req->laptop.SetExpertId(id);
-		req->prom.set_value(req->laptop);	
+        // process operation
+        MapOp opp = req->operation;
+        smr_log.push_back(opp);
+
+        // update map
+        ul_records.lock();
+        customer_record[opp.arg1] = opp.arg2;
+        ul_records.unlock();
+
+        // send admin id back
+		req->prom.set_value(id);
 	}
+}
+
+CustomerRecord LaptopFactory::ReadCustomerRecord(int customer_id) {
+    CustomerRecord result = *new CustomerRecord();
+    std::unique_lock<std::mutex> ul_records(records_lock, std::defer_lock);
+
+    // find customer in customer_record map.
+    ul_records.lock();
+    auto search = customer_record.find(customer_id);
+    if(search!=customer_record.end()){
+        result.SetCustomerId(customer_id);
+        result.SetLastOrderId(search->second);
+    }
+//    for(const auto& elem : customer_record)
+//    {
+//        std::cout << elem.first << " " << elem.second << "\n";
+//    }
+    ul_records.unlock();
+
+    return result;
 }
 
 
