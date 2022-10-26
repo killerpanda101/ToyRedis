@@ -83,8 +83,8 @@ int Socket::NagleOn(bool on_off) {
 	return 1;
 }
 
-bool Socket::IsNagleOn() {
-	return (nagle_ == NAGLE_ON) ? true : false;
+bool Socket::IsNagleOn() const {
+	return (nagle_ == NAGLE_ON);
 }
 
 void Socket::Close() {

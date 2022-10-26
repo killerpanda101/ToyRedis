@@ -1,6 +1,12 @@
 #include "ServerStub.h"
 
-ServerStub::ServerStub() = default;
+#include <utility>
+
+
+ServerStub::ServerStub() {
+
+}
+
 
 //----------------Methods used by server to handle requests------------
 
@@ -57,12 +63,12 @@ int ServerStub::SendReplicationResponse(int i) {
 
 //----------------Methods used by server to communicate with peers------------
 
-int ServerStub::Init(std::string ip, int port, int id) {
+int ServerStub::Init(int id, std::string ip, int port) {
     peer_id = id;
-    return send_socket.Init(ip, port);
+    return send_socket.Init(std::move(ip), port);
 }
 
-int ServerStub::GetPeerID() {
+int ServerStub::GetPeerID() const {
     return peer_id;
 }
 
@@ -71,11 +77,10 @@ bool ServerStub::SendIdentifier(int i) {
         return false;
     }
     char buffer[32];
-    int size;
     IdentificationMessage request;
     request.SetIdentifier(i);
     request.Marshal(buffer);
-    if (send_socket.Send(buffer, size, 0)) {
+    if (send_socket.Send(buffer, request.Size(), 0)) {
         return true;
     }
     return false;
@@ -95,6 +100,10 @@ ReplicationResponse ServerStub::ReceiveReplicationResponse() {
     }
     return request;
 }
+
+
+
+
 
 
 

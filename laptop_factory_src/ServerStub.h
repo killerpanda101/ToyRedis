@@ -6,11 +6,12 @@
 #include "ServerSocket.h"
 #include "Messages.h"
 
+
 class ServerStub {
 private:
 	std::unique_ptr<ServerSocket> socket;
     ServerSocket send_socket;
-    int peer_id;
+    int peer_id = -1;
 public:
 	ServerStub();
 
@@ -24,8 +25,8 @@ public:
     int ReceiveIdentifier();
 
     // methods used by the PFA thread
-    int Init(std::string ip, int port, int peer_id);
-    int GetPeerID();
+    int Init(int peer_id, std::string ip, int port);
+    int GetPeerID() const;
     int SendReplicationRequest(ReplicationRequest info);
     bool SendIdentifier(int i);
     ReplicationResponse ReceiveReplicationResponse();

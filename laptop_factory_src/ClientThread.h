@@ -9,9 +9,9 @@
 #include "ClientTimer.h"
 
 class ClientThreadClass {
-	int customer_id;
-	int num_orders;
-	int request_type;
+	int customer_id{};
+	int num_orders{};
+	int request_type{};
 	ClientStub stub;
 
 	ClientTimer timer;

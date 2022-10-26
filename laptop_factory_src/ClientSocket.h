@@ -8,8 +8,8 @@
 
 class ClientSocket: public Socket {
 public:
-	ClientSocket() {}
-	~ClientSocket() {}
+	ClientSocket() = default;
+	~ClientSocket() override = default;
 
 	int Init(std::string ip, int port);
 };

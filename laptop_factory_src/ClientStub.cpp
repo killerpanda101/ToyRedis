@@ -1,9 +1,10 @@
 #include "ClientStub.h"
+#include <iostream>
 
 ClientStub::ClientStub() {}
 
 int ClientStub::Init(std::string ip, int port) {
-	return socket.Init(ip, port);	
+	return socket.Init(ip, port);
 }
 
 LaptopInfo ClientStub::OrderLaptop(CustomerRequest request) {
@@ -14,8 +15,10 @@ LaptopInfo ClientStub::OrderLaptop(CustomerRequest request) {
 	size = request.Size();
 	if (socket.Send(buffer, size, 0)) {
 		size = info.Size();
+        std::cout<<1<<std::endl;
 		if (socket.Recv(buffer, size, 0)) {
 			info.Unmarshal(buffer);
+            info.Print();
 		} 
 	}
 	return info;
@@ -41,13 +44,13 @@ bool ClientStub::SendIdentifier(int i) {
         return false;
     }
     char buffer[32];
-    int size;
     IdentificationMessage request;
     request.SetIdentifier(i);
     request.Marshal(buffer);
-    if (socket.Send(buffer, size, 0)) {
+    if (socket.Send(buffer, request.Size(), 0)) {
         return true;
     }
+
     return false;
 }
 

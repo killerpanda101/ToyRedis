@@ -10,6 +10,7 @@
 
 #include "Messages.h"
 #include "ServerSocket.h"
+#include "ServerStub.h"
 
 struct AdminRequest {
 	MapOp operation;
@@ -37,10 +38,6 @@ private:
     // Engineer role helper
 	LaptopInfo CreateRegularLaptop(CustomerRequest request, int engineer_id);
     CustomerRecord ReadCustomerRecord(int customer_id);
-
-    // srm_log and map helpers
-    void AddOppToLog(MapOp op, int idx);
-    void ApplyOpp(int idx);
 
 public:
     void setFactoryID(int id);

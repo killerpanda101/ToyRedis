@@ -25,7 +25,7 @@ public:
 	int Recv(char *buffer, int size, int flags = 0);
 
 	int NagleOn(bool on_off);
-	bool IsNagleOn();
+	bool IsNagleOn() const;
 
 	void Close();
 };

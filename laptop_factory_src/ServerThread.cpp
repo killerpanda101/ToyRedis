@@ -1,8 +1,9 @@
 #include <iostream>
 #include <memory>
-
+#include <utility>
 #include "ServerThread.h"
-#include "ServerStub.h"
+
+
 
 //-------------------------Init/Setup-----------------------------
 void LaptopFactory::setFactoryID(int id) {
@@ -10,7 +11,7 @@ void LaptopFactory::setFactoryID(int id) {
 }
 
 void LaptopFactory::setPeerInfo(std::vector<peer_info> info) {
-    peer_info_vector = info;
+    peer_info_vector = std::move(info);
 }
 
 void LaptopFactory::setNumberOfPeers(int num_peers) {
@@ -41,6 +42,7 @@ void LaptopFactory::EngineerIFAThread(std::unique_ptr<ServerSocket> socket, int 
             switch (engineer_request_type) {
                 case 1:
                     laptop = CreateRegularLaptop(customer_req, engineer_id);
+                    laptop.Print();
                     stub.SendLaptop(laptop);
                     break;
                 case 2:
@@ -58,15 +60,23 @@ void LaptopFactory::EngineerIFAThread(std::unique_ptr<ServerSocket> socket, int 
         ReplicationRequest replication_req;
         replication_req = stub.ReceiveReplicationRequest();
         primary_id = replication_req.getPrimaryId();
-
-        // update primary
-        int primary_lastIDX = replication_req.getPrimaryId();
+        int primary_lastIDX = replication_req.getLastIndex();
+        int primary_committedIDX = replication_req.getCommittedIndex();
+        std::unique_lock<std::mutex> ul_records(records_lock, std::defer_lock);
 
         // append operation to smr_log
-        AddOppToLog(replication_req.getMapOP(),replication_req.getLastIndex());
+        if(smr_log.size()+1!=primary_lastIDX){
+            std::cout<<"ERROR: log idx do not match"<<std::endl;
+        }
+        smr_log.push_back(replication_req.getMapOP());
+        last_index = primary_lastIDX;
 
         // apply committed operation
-        ApplyOpp(replication_req.getCommittedIndex());
+        MapOp opp = smr_log[primary_committedIDX];
+        ul_records.lock();
+        customer_record[opp.arg1] = opp.arg2;
+        ul_records.unlock();
+        committed_index = primary_committedIDX;
 
         // respond back to primary
         stub.SendReplicationResponse(1);
@@ -75,10 +85,14 @@ void LaptopFactory::EngineerIFAThread(std::unique_ptr<ServerSocket> socket, int 
 
 void LaptopFactory::PFAThread(int id) {
     std::unique_lock<std::mutex> ul_erq(erq_lock, std::defer_lock);
-
-    ServerStub peer_stubs[number_of_peers];
+    std::unique_lock<std::mutex> ul_records(records_lock, std::defer_lock);
     ReplicationRequest request;
     ReplicationResponse response;
+    std::vector<ServerStub> peer_stubs;
+    for(int i=0; i<number_of_peers; i++){
+        peer_stubs.emplace_back();
+    }
+
 
     while (true) {
         // get operation from queue
@@ -88,30 +102,42 @@ void LaptopFactory::PFAThread(int id) {
             erq_cv.wait(ul_erq, [this]{ return !erq.empty(); });
         }
 
+        std::cout<<"take from queue"<<std::endl;
         auto req = std::move(erq.front());
         erq.pop();
 
         ul_erq.unlock();
 
+
         // primary changes
         if(primary_id!=factory_id){
+            // edge case
             if(committed_index!=-1){
-                ApplyOpp(last_index);
+                MapOp opp = smr_log[last_index];
+                ul_records.lock();
+                customer_record[opp.arg1] = opp.arg2;
+                ul_records.unlock();
+                committed_index = last_index;
             }
             primary_id = factory_id;
         }
+        std::cout<<"set primary"<<std::endl;
 
         // append request to log
-        AddOppToLog(req->operation, last_index+1);
+        last_index++;
+        smr_log.push_back(req->operation);
 
+        std::cout<<"add opp to log"<<std::endl;
 
         // send replication request to peers one by one
         for(int i=0; i<number_of_peers; i++){
+            std::cout<<"enter loop"<<std::endl;
 
             // establish connection, if already connected does not modify it.
-            peer_stubs[i].Init(peer_info_vector[i].ip,
-                               peer_info_vector[i].port, peer_info_vector[i].id);
-
+            peer_stubs[i].Init( peer_info_vector[i].id,
+                                    peer_info_vector[i].ip,
+                                    peer_info_vector[i].port );
+            std::cout<<"init peer_stubs"<<std::endl;
             // Send identifier stating that the request if from PFA
             peer_stubs[i].SendIdentifier(2);
 
@@ -125,7 +151,11 @@ void LaptopFactory::PFAThread(int id) {
         }
 
         // update map
-        ApplyOpp(last_index);
+        MapOp opp = smr_log[last_index];
+        ul_records.lock();
+        customer_record[opp.arg1] = opp.arg2;
+        ul_records.unlock();
+        committed_index = last_index;
 
         // send admin id back
         req->prom.set_value(id);
@@ -161,8 +191,10 @@ CreateRegularLaptop(CustomerRequest request, int engineer_id) {
 
     // set admin id and return
     int admin_id = fut.get();
+    std::cout << admin_id << std::endl;
+    laptop.Print();
     laptop.SetAdminId(admin_id);
-
+    laptop.Print();
     return laptop;
 }
 
@@ -187,21 +219,6 @@ CustomerRecord LaptopFactory::ReadCustomerRecord(int customer_id) {
 }
 
 
-//----------------------Helpers to add to smr_log and apply to map------------------------
-
-void LaptopFactory::AddOppToLog(MapOp op, int idx) {
-    smr_log[idx] = op;
-    last_index = idx;
-}
-
-void LaptopFactory::ApplyOpp(int idx) {
-    std::unique_lock<std::mutex> ul_records(records_lock, std::defer_lock);
-    MapOp opp = smr_log[idx];
-    ul_records.lock();
-    customer_record[opp.arg1] = opp.arg2;
-    ul_records.unlock();
-    committed_index = idx;
-}
 
 
 

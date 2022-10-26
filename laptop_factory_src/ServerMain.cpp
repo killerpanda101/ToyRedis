@@ -33,7 +33,6 @@ server_info check_args(int argc, char *argv[]){
 }
 
 int main(int argc, char *argv[]) {
-
 	ServerSocket socket;
 	LaptopFactory factory;
 	std::unique_ptr<ServerSocket> new_socket;
@@ -47,12 +46,13 @@ int main(int argc, char *argv[]) {
     factory.setPeerInfo(server_details.peer_info_vector);
     factory.setNumberOfPeers(server_details.number_of_peers);
 
-    // just one admin per factory
+    // just one PFA per factory
 	for (int i = 0; i < 1; i++) {
 		std::thread admin_thread(&LaptopFactory::PFAThread,
 				&factory, server_details.factory_id);
 		thread_vector.push_back(std::move(admin_thread));
 	}
+    std::cout << thread_vector.size()<<std::endl;
 
 	if (!socket.Init(server_details.port)) {
 		std::cout << "Socket initialization failed" << std::endl;

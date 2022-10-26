@@ -2,15 +2,16 @@
 #include "Messages.h"
 
 #include <iostream>
+#include <utility>
 
-ClientThreadClass::ClientThreadClass() {}
+ClientThreadClass::ClientThreadClass() = default;
 
 void ClientThreadClass::
 ThreadBody(std::string ip, int port, int id, int orders, int type) {
 	customer_id = id;
 	num_orders = orders;
 	request_type = type;
-	if (!stub.Init(ip, port)) {
+	if (!stub.Init(std::move(ip), port)) {
 		std::cout << "Thread " << customer_id << " failed to connect" << std::endl;
 		return;
 	}
@@ -30,7 +31,7 @@ ThreadBody(std::string ip, int port, int id, int orders, int type) {
             laptop = stub.OrderLaptop(request);
             if (!laptop.IsValid()) {
                 std::cout << "Invalid laptop " << customer_id << std::endl;
-                break;
+                return;
             }
         }
 
