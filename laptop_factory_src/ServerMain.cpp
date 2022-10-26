@@ -7,39 +7,67 @@
 #include "ServerSocket.h"
 #include "ServerThread.h"
 
+// process the command line arguments.
+server_info check_args(int argc, char *argv[]){
+    // we can have zero peers.
+    if (argc < 4+(atoi(argv[3])*3)) {
+        std::cout << "not enough arguments" << std::endl;
+        std::cout << argv[0] << "[port #] [unique ID] [# peers] (repeat [ID] [IP] [port #])" << std::endl;
+    }
+    struct server_info server_details;
+    server_details.port = atoi(argv[1]);
+    server_details.factory_id = atoi(argv[2]);
+    server_details.number_of_peers = atoi(argv[3]);
+
+    // adding peer details
+    for(int i; i<server_details.number_of_peers; i++){
+        struct peer_info peer_details;
+        int idx = i*3+4;
+        peer_details.id = atoi(argv[idx]);
+        peer_details.ip = argv[idx+1];
+        peer_details.port = atoi(argv[idx+2]);
+        server_details.peer_info_vector.push_back(peer_details);
+    }
+
+    return server_details;
+}
+
 int main(int argc, char *argv[]) {
-	int port;
-	int engineer_cnt = 0;
-	int num_experts;
+
 	ServerSocket socket;
 	LaptopFactory factory;
 	std::unique_ptr<ServerSocket> new_socket;
 	std::vector<std::thread> thread_vector;
-	
-	if (argc < 3) {
-		std::cout << "not enough arguments" << std::endl;
-		std::cout << argv[0] << "[port #] [# admin]" << std::endl;
-		return 0;
-	}
-	port = atoi(argv[1]);
-	num_experts = atoi(argv[2]);
 
-	for (int i = 0; i < num_experts; i++) {
-		std::thread admin_thread(&LaptopFactory::AdminThread,
-				&factory, engineer_cnt++);
+    int engineer_cnt = 0;
+
+    // Send the laptop factory information about its peers
+    struct server_info server_details = check_args(argc, argv);
+    factory.setFactoryID(server_details.factory_id);
+    factory.setPeerInfo(server_details.peer_info_vector);
+    factory.setNumberOfPeers(server_details.number_of_peers);
+
+    // just one admin per factory
+	for (int i = 0; i < 1; i++) {
+		std::thread admin_thread(&LaptopFactory::PFAThread,
+				&factory, server_details.factory_id);
 		thread_vector.push_back(std::move(admin_thread));
 	}
 
-	if (!socket.Init(port)) {
+	if (!socket.Init(server_details.port)) {
 		std::cout << "Socket initialization failed" << std::endl;
 		return 0;
 	}
 
 	while ((new_socket = socket.Accept())) {
-		std::thread engineer_thread(&LaptopFactory::EngineerThread, 
+        // Engineer ID's will not be liner anymore.
+		std::thread request_thread(&LaptopFactory::EngineerIFAThread,
 				&factory, std::move(new_socket), 
 				engineer_cnt++);
-		thread_vector.push_back(std::move(engineer_thread));
+		thread_vector.push_back(std::move(request_thread));
 	}
+
 	return 0;
 }
+
+

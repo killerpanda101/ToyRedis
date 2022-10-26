@@ -36,3 +36,18 @@ CustomerRecord ClientStub::ReadRecord(CustomerRequest request) {
     return record;
 }
 
+bool ClientStub::SendIdentifier(int i) {
+    if(i!=1){
+        return false;
+    }
+    char buffer[32];
+    int size;
+    IdentificationMessage request;
+    request.SetIdentifier(i);
+    request.Marshal(buffer);
+    if (socket.Send(buffer, size, 0)) {
+        return true;
+    }
+    return false;
+}
+

@@ -14,6 +14,10 @@ ThreadBody(std::string ip, int port, int id, int orders, int type) {
 		std::cout << "Thread " << customer_id << " failed to connect" << std::endl;
 		return;
 	}
+    if(!stub.SendIdentifier(1)){
+        std::cout << "Thread " << customer_id << " failed to send customer identifier" << std::endl;
+        return;
+    }
 	for (int i = 0; i < num_orders; i++) {
         CustomerRequest request;
         request.SetRequest(customer_id, i, request_type);

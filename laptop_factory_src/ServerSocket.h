@@ -14,6 +14,9 @@ public:
 
 	bool Init(int port);
 	std::unique_ptr<ServerSocket> Accept();
+
+    // Connecting socket for server to communicate with peers
+    bool Init(std::string ip, int port);
 };
 
 

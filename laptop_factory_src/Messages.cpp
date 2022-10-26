@@ -65,6 +65,7 @@ void CustomerRequest::Print() {
 }
 
 // ----------------------------Laptop Info Class functions--------------------------
+
 LaptopInfo::LaptopInfo() {
 	customer_id = -1;
 	order_number = -1;
@@ -220,10 +221,215 @@ void CustomerRecord::Unmarshal(char *buffer) {
 }
 
 bool CustomerRecord::IsValid() {
-    return (customer_id!=1);
+    return (customer_id!=-1);
 }
 
 void CustomerRecord::Print() {
     std::cout << "id " << customer_id << " ";
     std::cout << "last_order " << last_order_id << std::endl;
+}
+
+// ----------------------------Identifier Message Class functions--------------------------
+
+IdentificationMessage::IdentificationMessage() {
+    identifier = -1;
+}
+
+void IdentificationMessage::SetIdentifier(int val) {
+    identifier = val;
+}
+
+int IdentificationMessage::GetIdentifier() {
+    return identifier;
+}
+
+int IdentificationMessage::Size() {
+    return sizeof(identifier);
+}
+
+void IdentificationMessage::Marshal(char *buffer) {
+    int net_identifier = htonl(identifier);
+    int offset = 0;
+
+    memcpy(buffer + offset, &net_identifier, sizeof(net_identifier));
+}
+
+void IdentificationMessage::Unmarshal(char *buffer) {
+    int net_identifier;
+    int offset = 0;
+
+    memcpy(&net_identifier, buffer + offset, sizeof(net_identifier));
+
+    identifier = ntohl(net_identifier);
+}
+
+bool IdentificationMessage::IsValid() {
+    if(identifier==1 || identifier==2){
+        return true;
+    }
+    return false;
+}
+
+void IdentificationMessage::Print() {
+    std::cout << "identifier: " << identifier << std::endl;
+}
+
+// ----------------------------Replication request Class functions--------------------------
+
+ReplicationRequest::ReplicationRequest() {
+    factoryId=-1;
+    committed_index=-1;
+    last_index=-1;
+    opcode=-1;
+    arg1=-1;
+    arg2=-1;
+}
+
+void ReplicationRequest::setInfo(int fid, int committed_idx, int last_idx, MapOp op) {
+    factoryId=fid;
+    committed_index=committed_idx;
+    last_index=last_idx;
+    opcode=op.opcode;
+    arg1=op.arg1;
+    arg2=op.arg2;
+}
+
+int ReplicationRequest::getPrimaryId() {
+    return factoryId;
+}
+
+int ReplicationRequest::getCommittedIndex() {
+    return committed_index;
+}
+
+int ReplicationRequest::getLastIndex() {
+    return last_index;
+}
+
+MapOp ReplicationRequest::getMapOP() {
+    MapOp res{};
+    res.opcode = opcode;
+    res.arg1 = arg1;
+    res.arg2 = arg2;
+    return res;
+}
+
+int ReplicationRequest::Size(){
+    return sizeof(factoryId)+sizeof(committed_index)
+           +sizeof(last_index)+sizeof(opcode)+sizeof(arg1)+sizeof(arg2);
+}
+
+
+void ReplicationRequest::Marshal(char *buffer) {
+    factoryId=-1;
+    committed_index=-1;
+    last_index=-1;
+    opcode=-1;
+    arg1=-1;
+    arg2=-1;
+
+    int net_factoryID= htonl(factoryId);
+    int net_committedIDX = htonl(committed_index);
+    int net_lastIDX = htonl(last_index);
+    int net_OpCode = htonl(opcode);
+    int net_arg1 = htonl(arg1);
+    int net_arg2 = htonl(arg2);
+    int offset = 0;
+
+    memcpy(buffer + offset, &net_factoryID, sizeof(net_factoryID));
+    offset += sizeof(net_factoryID);
+    memcpy(buffer + offset, &net_committedIDX, sizeof(net_committedIDX));
+    offset += sizeof(net_committedIDX);
+    memcpy(buffer + offset, &net_lastIDX, sizeof(net_lastIDX));
+    offset += sizeof(net_lastIDX);
+    memcpy(buffer + offset, &net_OpCode, sizeof(net_OpCode));
+    offset += sizeof(net_OpCode);
+    memcpy(buffer + offset, &net_arg1, sizeof(net_arg1));
+    offset += sizeof(net_arg1);
+    memcpy(buffer + offset, &net_arg2, sizeof(net_arg2));
+}
+
+void ReplicationRequest::Unmarshal(char *buffer) {
+    int net_factoryID;
+    int net_committedIDX;
+    int net_lastIDX;
+    int net_OpCode;
+    int net_arg1;
+    int net_arg2;
+    int offset = 0;
+
+    memcpy(&net_factoryID, buffer + offset, sizeof(net_factoryID));
+    offset += sizeof(net_factoryID);
+    memcpy(&net_committedIDX, buffer + offset, sizeof(net_committedIDX));
+    offset += sizeof(net_committedIDX);
+    memcpy(&net_lastIDX, buffer + offset, sizeof(net_lastIDX));
+    offset += sizeof(net_lastIDX);
+    memcpy(&net_OpCode, buffer + offset, sizeof(net_OpCode));
+    offset += sizeof(net_OpCode);
+    memcpy(&net_arg1, buffer + offset, sizeof(net_arg1));
+    offset += sizeof(net_arg1);
+    memcpy(&net_arg2, buffer + offset, sizeof(net_arg2));
+
+    factoryId=ntohl(net_factoryID);
+    committed_index=ntohl(net_committedIDX);
+    last_index=ntohl(net_lastIDX);
+    opcode=ntohl(net_OpCode);
+    arg1=ntohl(net_arg1);
+    arg2=ntohl(net_arg2);
+}
+
+bool ReplicationRequest::IsValid() {
+    return (factoryId!=-1);
+}
+
+void ReplicationRequest::Print() {
+    std::cout << "FactorID " << factoryId;
+    std::cout << "CommittedIDX " << committed_index;
+    std::cout << "LastIDX " << last_index;
+    std::cout << "OpCode " << opcode;
+    std::cout << "Arg1 " << arg1;
+    std::cout << "Arg2 " << arg2 << std::endl;
+
+}
+
+// ----------------------------Replication Response Class functions--------------------------
+
+ReplicationResponse::ReplicationResponse() {
+    status = -1;
+}
+
+void ReplicationResponse::setInfo(int num) {
+    status = num;
+}
+
+int ReplicationResponse::getStatus() {
+    return status;
+}
+
+int ReplicationResponse::Size() {
+    return sizeof(status);
+}
+
+void ReplicationResponse::Marshal(char *buffer) {
+    int net_status = htonl(status);
+    int offset = 0;
+
+    memcpy(buffer + offset, &net_status, sizeof(net_status));
+}
+
+void ReplicationResponse::Unmarshal(char *buffer) {
+    int net_status;
+    int offset = 0;
+
+    memcpy(&net_status, buffer + offset, sizeof(net_status));
+
+    status = ntohl(net_status);
+}
+
+bool ReplicationResponse::IsValid() {
+    return (status==1);
+}
+
+void ReplicationResponse::Print() {
+    std::cout << "Status: " << std::endl;
 }
