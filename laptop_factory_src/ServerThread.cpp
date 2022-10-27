@@ -56,30 +56,34 @@ void LaptopFactory::EngineerIFAThread(std::unique_ptr<ServerSocket> socket, int 
     }
 
     // request for IFA
-    else{
+    else if(role == 2){
         ReplicationRequest replication_req;
-        replication_req = stub.ReceiveReplicationRequest();
-        primary_id = replication_req.getPrimaryId();
-        int primary_lastIDX = replication_req.getLastIndex();
-        int primary_committedIDX = replication_req.getCommittedIndex();
         std::unique_lock<std::mutex> ul_records(records_lock, std::defer_lock);
 
-        // append operation to smr_log
-        if(smr_log.size()+1!=primary_lastIDX){
-            std::cout<<"ERROR: log idx do not match"<<std::endl;
+        while(true){
+            replication_req = stub.ReceiveReplicationRequest();
+            primary_id = replication_req.getPrimaryId();
+            int primary_lastIDX = replication_req.getLastIndex();
+            int primary_committedIDX = replication_req.getCommittedIndex();
+
+
+            // append operation to smr_log
+            if(smr_log.size()!=primary_lastIDX){
+                std::cout<<"ERROR: log idx do not match"<< smr_log.size() << " " << primary_lastIDX<< std::endl;
+            }
+            smr_log.push_back(replication_req.getMapOP());
+            last_index = primary_lastIDX;
+
+            // apply committed operation
+            MapOp opp = smr_log[primary_committedIDX];
+            ul_records.lock();
+            customer_record[opp.arg1] = opp.arg2;
+            ul_records.unlock();
+            committed_index = primary_committedIDX;
+
+            // respond back to primary
+            stub.SendReplicationResponse(1);
         }
-        smr_log.push_back(replication_req.getMapOP());
-        last_index = primary_lastIDX;
-
-        // apply committed operation
-        MapOp opp = smr_log[primary_committedIDX];
-        ul_records.lock();
-        customer_record[opp.arg1] = opp.arg2;
-        ul_records.unlock();
-        committed_index = primary_committedIDX;
-
-        // respond back to primary
-        stub.SendReplicationResponse(1);
     }
 }
 
@@ -131,15 +135,18 @@ void LaptopFactory::PFAThread(int id) {
 
         // send replication request to peers one by one
         for(int i=0; i<number_of_peers; i++){
-            std::cout<<"enter loop"<<std::endl;
+
 
             // establish connection, if already connected does not modify it.
-            peer_stubs[i].Init( peer_info_vector[i].id,
+            int temp = peer_stubs[i].Init( peer_info_vector[i].id,
                                     peer_info_vector[i].ip,
                                     peer_info_vector[i].port );
-            std::cout<<"init peer_stubs"<<std::endl;
+
             // Send identifier stating that the request if from PFA
-            peer_stubs[i].SendIdentifier(2);
+            if(temp){
+                peer_stubs[i].SendIdentifier(2);
+            }
+
 
             // send replication request
             request.setInfo(factory_id, committed_index,

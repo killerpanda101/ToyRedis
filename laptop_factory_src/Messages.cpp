@@ -321,12 +321,6 @@ int ReplicationRequest::Size(){
 
 
 void ReplicationRequest::Marshal(char *buffer) {
-    factoryId=-1;
-    committed_index=-1;
-    last_index=-1;
-    opcode=-1;
-    arg1=-1;
-    arg2=-1;
 
     int net_factoryID= htonl(factoryId);
     int net_committedIDX = htonl(committed_index);

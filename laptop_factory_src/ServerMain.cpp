@@ -20,7 +20,7 @@ server_info check_args(int argc, char *argv[]){
     server_details.number_of_peers = atoi(argv[3]);
 
     // adding peer details
-    for(int i; i<server_details.number_of_peers; i++){
+    for(int i=0; i<server_details.number_of_peers; i++){
         struct peer_info peer_details;
         int idx = i*3+4;
         peer_details.id = atoi(argv[idx]);
