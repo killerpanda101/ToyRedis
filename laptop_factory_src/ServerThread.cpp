@@ -37,12 +37,14 @@ void LaptopFactory::EngineerIFAThread(std::unique_ptr<ServerSocket> socket, int 
 
         while (true) {
             customer_req = stub.ReceiveEngineerRequest();
-            if (!customer_req.IsValid()) {break;}
+            if (!customer_req.IsValid()) {
+                //customer_req.Print();
+                break;
+            }
             engineer_request_type = customer_req.GetRequestType();
             switch (engineer_request_type) {
                 case 1:
                     laptop = CreateRegularLaptop(customer_req, engineer_id);
-                    laptop.Print();
                     stub.SendLaptop(laptop);
                     break;
                 case 2:
@@ -62,6 +64,10 @@ void LaptopFactory::EngineerIFAThread(std::unique_ptr<ServerSocket> socket, int 
 
         while(true){
             replication_req = stub.ReceiveReplicationRequest();
+            if(!replication_req.IsValid()){
+                replication_req.Print();
+                break;
+            }
             primary_id = replication_req.getPrimaryId();
             int primary_lastIDX = replication_req.getLastIndex();
             int primary_committedIDX = replication_req.getCommittedIndex();
@@ -106,7 +112,7 @@ void LaptopFactory::PFAThread(int id) {
             erq_cv.wait(ul_erq, [this]{ return !erq.empty(); });
         }
 
-        std::cout<<"take from queue"<<std::endl;
+
         auto req = std::move(erq.front());
         erq.pop();
 
@@ -125,13 +131,13 @@ void LaptopFactory::PFAThread(int id) {
             }
             primary_id = factory_id;
         }
-        std::cout<<"set primary"<<std::endl;
+
 
         // append request to log
         last_index++;
         smr_log.push_back(req->operation);
 
-        std::cout<<"add opp to log"<<std::endl;
+
 
         // send replication request to peers one by one
         for(int i=0; i<number_of_peers; i++){
@@ -198,10 +204,8 @@ CreateRegularLaptop(CustomerRequest request, int engineer_id) {
 
     // set admin id and return
     int admin_id = fut.get();
-    std::cout << admin_id << std::endl;
-    laptop.Print();
     laptop.SetAdminId(admin_id);
-    laptop.Print();
+
     return laptop;
 }
 

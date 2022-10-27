@@ -30,7 +30,6 @@ ThreadBody(std::string ip, int port, int id, int orders, int type) {
             LaptopInfo laptop;
             laptop = stub.OrderLaptop(request);
             if (!laptop.IsValid()) {
-                std::cout << "Invalid laptop " << customer_id << std::endl;
                 return;
             }
         }

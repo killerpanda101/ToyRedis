@@ -15,10 +15,8 @@ LaptopInfo ClientStub::OrderLaptop(CustomerRequest request) {
 	size = request.Size();
 	if (socket.Send(buffer, size, 0)) {
 		size = info.Size();
-        std::cout<<1<<std::endl;
 		if (socket.Recv(buffer, size, 0)) {
 			info.Unmarshal(buffer);
-            info.Print();
 		} 
 	}
 	return info;

@@ -23,6 +23,7 @@ CustomerRequest ServerStub::ReceiveEngineerRequest(){
 	return request;
 }
 
+
 int ServerStub::ReceiveIdentifier() {
     char buffer[32];
     IdentificationMessage request;

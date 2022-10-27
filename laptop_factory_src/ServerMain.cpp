@@ -52,7 +52,7 @@ int main(int argc, char *argv[]) {
 				&factory, server_details.factory_id);
 		thread_vector.push_back(std::move(admin_thread));
 	}
-    std::cout << thread_vector.size()<<std::endl;
+
 
 	if (!socket.Init(server_details.port)) {
 		std::cout << "Socket initialization failed" << std::endl;
